@@ -30,16 +30,19 @@ def download(tickers, start, end):
 
 def features(frame):
     frame = frame.sort_values(["ticker", "date"]).copy()
-    g = frame.groupby("ticker", group_keys=False)
-    frame["ret_1"] = g["close"].pct_change()
+    frame["ret_1"] = frame.groupby("ticker")["close"].transform(
+        lambda s: s.pct_change(fill_method=None))
     for n in (5, 20, 60):
-        frame[f"mom_{n}"] = g["close"].pct_change(n).shift(1)
-    frame["vol_20"] = g["ret_1"].transform(lambda s: s.rolling(20).std().shift(1))
-    frame["rel_volume_20"] = g["volume"].transform(
+        frame[f"mom_{n}"] = frame.groupby("ticker")["close"].transform(
+            lambda s, n=n: s.pct_change(n, fill_method=None).shift(1))
+    frame["vol_20"] = frame.groupby("ticker")["ret_1"].transform(
+        lambda s: s.rolling(20).std().shift(1))
+    frame["rel_volume_20"] = frame.groupby("ticker")["volume"].transform(
         lambda s: (s / s.rolling(20).mean()).shift(1))
     frame["intraday_range"] = ((frame["high"] - frame["low"]) / frame["close"]).groupby(
         frame["ticker"]).shift(1)
-    frame["target"] = g["close"].pct_change().shift(-1)
+    frame["target"] = frame.groupby("ticker")["close"].transform(
+        lambda s: s.pct_change(fill_method=None).shift(-1))
     return frame.dropna(subset=FEATURES + ["target"])
 
 def split_dates(panel):
@@ -74,6 +77,7 @@ def main():
     metrics = {
         "downloaded_rows": int(len(raw)),
         "modeling_rows": int(len(panel)),
+        "validation_dates": int(len(val_dates)),
         "test_rows": int(len(test)),
         "test_r2": float(r2_score(test["target"], test["prediction"])),
         "mean_daily_rank_ic": daily_rank_ic(test),
