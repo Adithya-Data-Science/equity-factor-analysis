@@ -1,0 +1,10 @@
+{
+  "status": "historical_reference",
+  "raw_rows": 619040,
+  "panel_rows": 141333,
+  "panel_tickers": 120,
+  "test_rows": 17640,
+  "test_r2": -0.015876968107455758,
+  "mean_daily_rank_ic": -0.010837635459540468,
+  "interpretation": "Simple technical factors were not stable out of sample; limitations are documented in the README."
+}
